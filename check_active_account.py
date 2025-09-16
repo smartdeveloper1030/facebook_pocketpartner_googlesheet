@@ -1,13 +1,9 @@
 from facebook_business.api import FacebookAdsApi
 from facebook_business.adobjects.user import User
-
-# Replace these with your actual values
-ACCESS_TOKEN = 'EAAKfu6kmk1EBPZAFdugO5FMjERNqJNNmCcta7MZCSb4g2ZCz10N2qnwapUtQQokocKWkaybXX5f4EZCz9ihhQ6NVd6uBZCMuS5SFUPkZCkWtualZCPl07SDf8ZBngAznv63Ufsi9ghftsarkZBnxPOUkZBxKOAKXe0rvgQhsT9Y7mBwVBmDcgOazMu0BFqAjyGfVq3eqlcHdMP7P7i'
-APP_ID = '738578298999633'
-APP_SECRET = 'ef0b0779229dee1493c0af64dd34f42d'
+import core
 
 # Initialize API
-FacebookAdsApi.init(app_id=APP_ID, app_secret=APP_SECRET, access_token=ACCESS_TOKEN)
+FacebookAdsApi.init(app_id=core.fb_app_id, app_secret=core.fb_app_secret, access_token=core.fb_access_token)
 
 # Get Ad Accounts for the current user
 def get_active_ad_accounts():
