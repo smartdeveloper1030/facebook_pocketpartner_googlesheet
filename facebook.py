@@ -1,6 +1,7 @@
 from facebook_business.api import FacebookAdsApi
 from facebook_business.adobjects.user import User
 from facebook_business.adobjects.adaccount import AdAccount
+from facebook_business.adobjects.adsinsights import AdsInsights
 from facebook_business.adobjects.campaign import Campaign
 from facebook_business.adobjects.adset import AdSet
 from collections import defaultdict
@@ -179,6 +180,75 @@ async def get_facebook_ads_direct() -> list:
         print(f"Error parsing JSON response: {e}")
         return []
 
+def get_facebook_ads_direct_with_sdk() -> list:
+    global is_first_call
+     # Determine date range
+    if is_first_call:
+        date_preset = AdsInsights.Preset.last_7d
+        is_first_call = False
+    else:
+        date_preset = AdsInsights.Preset.last_7d
+    all_ads_data = []
+    try:
+        # Get all ad accounts
+        me = FacebookAdsApi.get_default_api().get_user()
+        ad_accounts = me.get_ad_accounts(fields=[AdAccount.Field.account_id, AdAccount.Field.name])
+        
+        for account in ad_accounts:
+            # Get campaigns that match keywords
+            campaigns = account.get_campaigns(fields=[Campaign.Field.id, Campaign.Field.name])
+            matching_campaign_ids = []
+            
+            for campaign in campaigns:
+                campaign_name = campaign[Campaign.Field.name].upper()
+                if keyword1.upper() in campaign_name or keyword2.upper() in campaign_name:
+                    matching_campaign_ids.append(campaign[Campaign.Field.id])
+            
+            if not matching_campaign_ids:
+                continue
+            
+            # Get insights for matching campaigns
+            insights = account.get_insights(
+                fields=[
+                    AdsInsights.Field.account_id,
+                    AdsInsights.Field.account_name,
+                    AdsInsights.Field.ad_id,
+                    AdsInsights.Field.campaign_name,
+                    AdsInsights.Field.country,
+                    AdsInsights.Field.date_start,
+                    AdsInsights.Field.spend,
+                ],
+                params={
+                    'date_preset': date_preset,
+                    'level': AdsInsights.Level.ad,
+                    'breakdowns': [AdsInsights.Breakdowns.country],
+                    'filtering': [{'field': 'campaign.id', 'operator': 'IN', 'value': matching_campaign_ids}]
+                }
+            )
+            
+            for insight in insights:
+                spend = float(insight.get(AdsInsights.Field.spend, 0))
+                if spend == 0:
+                    continue
+                
+                transformed_item = {
+                    'account_id': insight.get(AdsInsights.Field.account_id),
+                    'account_name': insight.get(AdsInsights.Field.account_name),
+                    'ad_id': insight.get(AdsInsights.Field.ad_id),
+                    'campaign': insight.get(AdsInsights.Field.campaign_name),
+                    'country': insight.get(AdsInsights.Field.country),
+                    'date': insight.get(AdsInsights.Field.date_start),
+                    'spend': spend
+                }
+                all_ads_data.append(transformed_item)
+            print(all_ads_data)
+    
+    except Exception as e:
+        print(f"Error using Facebook Business SDK: {e}")
+        return []
+    
+    return all_ads_data
+
 async def save_data_to_sqlite(data: list):
     print('saving data to sqlite')
     print("Current time (UTC-3):", datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=-3))))
@@ -251,7 +321,8 @@ async def load_data_from_db() -> list:
     return result
   
 async def fb_optimize() -> list:
-    fb_data = await get_facebook_ads_direct()
+    # fb_data = await get_facebook_ads_direct()
+    fb_data = await get_facebook_ads_direct_with_sdk()
     await save_data_to_sqlite(fb_data)
     fb_data_optimize = await load_data_from_db()
     
