@@ -20,7 +20,7 @@ from anticaptchaofficial.recaptchav2proxyless import recaptchaV2Proxyless
 import pocketotion
 import facebook
 
-from googleSheetUpdate import update_google_sheet
+from googlesheet import update_google_sheet
 
 os.system("FBPO_listener")
 

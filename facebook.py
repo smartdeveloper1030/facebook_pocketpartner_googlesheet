@@ -11,7 +11,7 @@ import requests
 import json
 import asyncio
 import time
-from googleSheetUpdate import update_google_sheet3
+from googlesheet import update_google_sheet3
 import sqlite3
 
 FacebookAdsApi.init(core.fb_app_id, core.fb_app_secret, core.fb_access_token)
