@@ -17,7 +17,7 @@ from aiogram import Bot, Dispatcher
 from anticaptchaofficial.recaptchav2proxyless import recaptchaV2Proxyless
 
 
-import pocketotion
+import pocketpartners
 import facebook
 
 from googlesheet import update_google_sheet
@@ -426,7 +426,7 @@ async def main(isStarted = False):
         combine_data = None
 
         while commition_data is None and retry_count < max_retries:
-            commition_data = await pocketotion.get_pocketoption_data()
+            commition_data = await pocketpartners.get_pocketoption_data()
             if commition_data is None:
                 retry_count += 1
                 logger.warning(f"Attempt {retry_count}/{max_retries}: Failed to get pocketOption data, retrying...")
@@ -459,7 +459,7 @@ async def main(isStarted = False):
 
 async def scheduler():
     # Run main() once at startup
-    await main(isStarted=False)
+    await main(isStarted=True)
     send_message()
     while True:
         # Get Brazilia time (UTC-3)
