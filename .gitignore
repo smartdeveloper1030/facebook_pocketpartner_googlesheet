@@ -1,0 +1,13 @@
+.venv*
+venv*
+*.pyc
+__pycache__/
+logs/
+.env
+cookies.json
+remove_country.txt
+remove_country_message.txt
+credentials.env
+chat_ids.txt
+breno-464119-ce9ab4f13952.json
+
