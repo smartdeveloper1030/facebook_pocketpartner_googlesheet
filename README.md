@@ -21,12 +21,6 @@ Using this data, the bot calculates the Return on Investment (ROI) for various a
 
 Thanks to this bot, the company achieved an **8% reduction in ad costs** in target countries, all while keeping performance metrics strong!
 
-## Project Structure 📁
-
-You can check out the project here (currently private): ❤️ [GitHub Repository](https://github.com/smartdeveloper1030/facebook-pocketoption-combine) ❤️. 
-
-**Note**: The project utilizes Google Cloud to manage Google Sheets, making it private at this time. However, I can provide a public version without the Google Cloud integration upon request.
-
 ## Getting Started
 
 If you're interested in learning more or viewing a demo, please feel free to reach out!
