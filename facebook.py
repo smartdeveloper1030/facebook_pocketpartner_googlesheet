@@ -147,17 +147,17 @@ async def get_facebook_ads_direct() -> list:
     if is_first_call:
         params = {
             'api_key': core.fb_api_key,
-            # 'date_from': '2025-06-24',
-            # 'date_to': current_date,
-            'date_preset': 'last_3d',
-            'fields': 'account_id,account_name,ad_id,campaign,country,date,spend',
+            'date_from': '2025-06-24',
+            'date_to': current_date,
+            # 'date_preset': 'last_3d',
+            'fields': 'account_id,account_name,campaign,campaign_id,country,date,spend',
         }
         is_first_call = False
     else:
         params = {
             'api_key': core.fb_api_key,
             'date_preset': 'last_7d',
-            'fields': 'account_id,account_name,ad_id,campaign,country,date,spend',
+            'fields': 'account_id,account_name,campaign,campaign_id,country,date,spend',
         }
     
     try:
@@ -185,7 +185,7 @@ async def save_data_to_sqlite(data: list):
     conn = sqlite3.connect('facebook_data.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS facebook
-                 (id INTEGER PRIMARY KEY, account_id TEXT, ad_id TEXT, country TEXT, date TEXT, spend FLOAT)''')
+                 (id INTEGER PRIMARY KEY, account_id TEXT, campaign_id TEXT, country TEXT, date TEXT, spend FLOAT)''')
     
     batch_insert = []
     batch_update = []
@@ -194,18 +194,18 @@ async def save_data_to_sqlite(data: list):
     for item in data:
         account_id = item.get('account_id')
         date = item.get('date')
-        ad_id = item.get('ad_id')
+        campaign_id = item.get('campaign_id')
         country = item.get('country')
         spend = float(item.get('spend', 0))
         
-        c.execute('''SELECT spend FROM facebook WHERE account_id=? AND ad_id=? AND country=? AND date=?''',
-                  (account_id, ad_id, country, date))
+        c.execute('''SELECT spend FROM facebook WHERE account_id=? AND campaign_id=? AND country=? AND date=?''',
+                  (account_id, campaign_id, country, date))
         row = c.fetchone()
         if row is None:
-            print('insert', account_id, ad_id, country, date, spend)
-            batch_insert.append((account_id, ad_id, country, date, spend))
+            print('insert', account_id, campaign_id, country, date, spend)
+            batch_insert.append((account_id, campaign_id, country, date, spend))
             if len(batch_insert) == SIZE:
-                c.executemany('''INSERT INTO facebook (account_id, ad_id, country, date, spend)
+                c.executemany('''INSERT INTO facebook (account_id, campaign_id, country, date, spend)
                                 VALUES (?, ?, ?, ?, ?)''', batch_insert)
                 conn.commit()
                 batch_insert = []
@@ -213,19 +213,19 @@ async def save_data_to_sqlite(data: list):
             existing_spend = float(row[0]) if row[0] is not None else 0.0
             # Only update if spend changed (allowing for floating point tolerance)
             if abs(existing_spend - spend) > 1e-9:
-                print('update', account_id, ad_id, country, date, spend)
-                batch_update.append((spend, account_id, ad_id, country, date))
+                print('update', account_id, campaign_id, country, date, spend)
+                batch_update.append((spend, account_id, campaign_id, country, date))
                 if len(batch_update) == SIZE:
                     c.executemany('''UPDATE facebook SET spend=? WHERE account_id=? AND ad_id=? AND country=? AND date=?''', batch_update)
                     conn.commit()
                     batch_update = []
 
     if batch_insert:
-        c.executemany('''INSERT INTO facebook (account_id, ad_id, country, date, spend)
+        c.executemany('''INSERT INTO facebook (account_id, campaign_id, country, date, spend)
                         VALUES (?, ?, ?, ?, ?)''', batch_insert)
         conn.commit()
     if batch_update:
-        c.executemany('''UPDATE facebook SET spend=? WHERE account_id=? AND ad_id=? AND country=? AND date=?''', batch_update)
+        c.executemany('''UPDATE facebook SET spend=? WHERE account_id=? AND campaign_id=? AND country=? AND date=?''', batch_update)
         conn.commit()
     conn.close()
 
