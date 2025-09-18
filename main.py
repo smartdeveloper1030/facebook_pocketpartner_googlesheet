@@ -113,7 +113,7 @@ def validate_login(res:  httpx.Response) -> bool:
 
 async def perform_login() -> None:
     # Set a new proxy for this login attempt
-    proxy_config = get_rotating_proxy()
+    proxy_config = await get_rotating_proxy()
     if proxy_config:
         # Close previous session if exists
         if hasattr(core, "session") and core.session:
