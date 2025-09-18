@@ -42,46 +42,18 @@ if sys.platform == 'win32':
 bot = Bot(token=core.bot_token)
 dp = Dispatcher()
 
-
-def load_proxies():
-    proxies = []
-    try:
-        with open('./../proxy.txt', 'r') as f:
-            for line in f:
-                proxy = line.strip()
-                if proxy:
-                    proxies.append(proxy)
-    except Exception as e:
-        logger.error(f"Error loading proxies: {e}")
-    return proxies
-
-# Add this as a global variable at the top of the file
-current_proxy_index = 0
-
-def get_random_proxy():
-    global current_proxy_index  # Declare global variable inside function
-    proxies = load_proxies()
-    if not proxies:
-        return None
+async def get_rotating_proxy():
+    domain = "p.webshare.io"
+    port = 80
+    proxyusername="uyqgyajo-rotate"
+    proxypassword="ia4anr5881l4"
+    # Returns a proxy dict suitable for httpx.AsyncClient, using the credentials above
     
-    # Get proxy sequentially
-    proxy_str = proxies[current_proxy_index]
-    # Update index for next call, wrap around to 0 if we reach the end
-    current_proxy_index = (current_proxy_index + 1) % len(proxies)
-
-    # Format: host:port:user:pwd
-    parts = proxy_str.split(":")
-    print("Proxy============>:", proxy_str)
-    if len(parts) == 4:
-        host, port, username, password = parts
-        proxy_url = f"http://{username}:{password}@{host}:{port}"
-        return {
-            "http://": proxy_url,
-            "https://": proxy_url
-        }
-    else:
-        logger.error(f"Invalid proxy format: {proxy_str}")
-        return None
+    proxy_url = f"http://{proxyusername}:{proxypassword}@{domain}:{port}"
+    return {
+        "http://": proxy_url,
+        "https://": proxy_url
+    }
 
 async def fetch(url: str, **kwargs) -> httpx.Response:
     try:
@@ -141,7 +113,7 @@ def validate_login(res:  httpx.Response) -> bool:
 
 async def perform_login() -> None:
     # Set a new proxy for this login attempt
-    proxy_config = get_random_proxy()
+    proxy_config = get_rotating_proxy()
     if proxy_config:
         # Close previous session if exists
         if hasattr(core, "session") and core.session:
