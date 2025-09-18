@@ -1,15 +1,18 @@
-# Facebook Meta Ads Management Bot 🌟
+# Facebook Ads Management Automation Bot 🌟
 
-Welcome to the Facebook Meta Ads Management Bot! This Python-based tool is designed to help users efficiently manage their Facebook Meta Ads by automating data collection and analysis.
+Welcome to the Facebook Ads Management Automation Bot! 
+This Python-based tool is designed to help users efficiently manage their Facebook Ads by automating data collection and analysis.
 
 ## Overview
 
 This bot collects key performance data, including **Commission** and **Spend**, from:
 
 - [Pocket Partners](https://pocketpartners.com)
-- Facebook Meta Ads accounts
+- Facebook Ads Account
 
-Using this data, the bot calculates the Return on Investment (ROI) for various ad locations. If the **ROI** falls below 150%, the bot automatically removes those locations from ad targeting.
+Using this data, the bot calculates the Return on Investment (ROI) for various ad locations. 
+If **ROI** falls below 150%, the bot automatically removes that region from ad targeting. 
+If it exceeds 150%, it retains that region in ad targeting.
 
 ## Key Features 💡
 
