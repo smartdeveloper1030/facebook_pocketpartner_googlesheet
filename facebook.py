@@ -281,7 +281,7 @@ async def remove_country_from_account_id(countries_info: list)-> None:
         print('===============account_id================')
         print(account_id, account_name)
 
-        if account_id == "3634337080196089": # account_name is acc 28
+        if account_id == "1099441028945876": # BLACK STAR [ACC 34] [T.D]
             print(f"⛔ Skipping account_id {account_id} as per exclusion rule.")
             continue
         
