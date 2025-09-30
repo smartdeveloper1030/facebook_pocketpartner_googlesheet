@@ -97,7 +97,7 @@ def get_added_removed_countries(remove_country: dict):
     added_countries_names = remove_country_set - old_country_set
     added_countries = [row for row in remove_country if row['COUNTRY'] in added_countries_names]
     if added_countries:
-        message.append("Added to the Remove List\n")
+        message.append("❌ REMOVED FROM CAMPAIGN\n")
         print('Added countries (full items):', added_countries)
         for country in added_countries:
             message.append(f"🏴 Country: {country['COUNTRY']}\n")
@@ -114,7 +114,7 @@ def get_added_removed_countries(remove_country: dict):
     removed_countries_names = old_country_set - remove_country_set
     removed_countries = [row for row in old_country if row['COUNTRY'] in removed_countries_names]
     if removed_countries:
-        message.append("Removed from the Remove List\n")
+        message.append("✅ ADDED TO CAMPAIGN\n")
         print('Removed countries (full items):', removed_countries)
         for country in removed_countries:
             message.append(f"🏴 Country: {country['COUNTRY']}\n")
