@@ -147,9 +147,9 @@ async def get_facebook_ads_direct() -> list:
     if is_first_call:
         params = {
             'api_key': core.fb_api_key,
-            # 'date_from': '2025-06-24',
-            # 'date_to': current_date,
-            'date_preset': 'last_3d',
+            'date_from': '2025-06-24',
+            'date_to': current_date,
+            # 'date_preset': 'last_3d',
             'fields': 'account_id,account_name,campaign,campaign_id,country,date,spend',
         }
         is_first_call = False
