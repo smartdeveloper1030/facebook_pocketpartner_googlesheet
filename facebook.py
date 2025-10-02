@@ -13,6 +13,8 @@ import asyncio
 import time
 from googlesheet import update_google_sheet3
 import sqlite3
+from facebook_business.adobjects.adsinsights import AdsInsights
+import pycountry
 
 FacebookAdsApi.init(core.fb_app_id, core.fb_app_secret, core.fb_access_token)
 
@@ -66,6 +68,10 @@ def country_name_to_code(country_name):
         return "SJ"	
     if country_name.lower() == "falkland islands":
         return "FK"	
+    if country_name.lower() == "st. barths":
+        return "BL"
+    if country_name.lower() == "wallis and futuna islands":
+        return "WF"
     try:
         country = pycountry.countries.lookup(country_name)
         return country.alpha_2
@@ -85,6 +91,19 @@ def get_active_ad_accounts():
         if account['account_status'] == 1 # filter for active accounts
     ]
     return active_accounts
+
+def get_all_ad_accounts():
+    """Get all ad accounts, regardless of status."""
+    me = User(fbid='me')
+    ad_accounts = me.get_ad_accounts(fields=['id', 'account_id', 'name', 'account_status'])
+    all_accounts = [
+        {
+            'account_id': account['account_id'],
+            'account_name': account.get('name', 'N/A')
+        }
+        for account in ad_accounts
+    ]
+    return all_accounts
 
 def check_campaign_status(account_id=None, campaign_name_filter=None):
     """
@@ -138,7 +157,7 @@ def check_campaign_status(account_id=None, campaign_name_filter=None):
     
     return all_campaigns
 
-async def get_facebook_ads_direct() -> list:
+async def get_facebook_ads_direct_windsor() -> list:
     global is_first_call
     current_date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
     url = "https://connectors.windsor.ai/all"
@@ -147,9 +166,9 @@ async def get_facebook_ads_direct() -> list:
     if is_first_call:
         params = {
             'api_key': core.fb_api_key,
-            # 'date_from': '2025-06-24',
-            # 'date_to': current_date,
-            'date_preset': 'last_3d',
+            'date_from': '2025-06-24',
+            'date_to': current_date,
+            # 'date_preset': 'last_3d',
             'fields': 'account_id,account_name,campaign,campaign_id,country,date,spend',
         }
         is_first_call = False
@@ -179,6 +198,60 @@ async def get_facebook_ads_direct() -> list:
         print(f"Error parsing JSON response: {e}")
         return []
 
+async def get_facebook_ads_data_from_graph_api() -> list:
+    """
+    Fetch Facebook ad spend data directly from the Facebook Marketing API.
+    Returns a list of dicts with account_id, account_name, campaign, campaign_id, country, date, spend.
+    """
+    # accounts = get_active_ad_accounts()
+    accounts = get_all_ad_accounts()
+    result = []
+    for account in accounts:
+        act_account_id = f"act_{account['account_id']}"
+        ad_account = AdAccount(act_account_id)
+        try:
+            # Filter campaigns with keywords
+            campaigns = ad_account.get_campaigns(fields=[
+                Campaign.Field.id,
+                Campaign.Field.name,
+                Campaign.Field.status
+            ])
+            for campaign in campaigns:
+                campaign_name = campaign[Campaign.Field.name]
+                if keyword1 in campaign_name or keyword2 in campaign_name:
+                    # Get insights for this campaign
+                    insights = Campaign(campaign[Campaign.Field.id]).get_insights(fields=[
+                        AdsInsights.Field.campaign_id,
+                        AdsInsights.Field.campaign_name,
+                        AdsInsights.Field.spend,
+                        AdsInsights.Field.date_start,
+                        AdsInsights.Field.date_stop
+                    ], params={
+                        'level': 'campaign',
+                        'breakdowns': ['country'],
+                        'date_preset': 'last_3d',
+                        'time_increment': 1 
+                    })
+                    for insight in insights:
+                        country_code = insight.get('country', 'Unknown')
+                        spend = float(insight.get('spend', 0))
+                        date = insight.get('date_stop', '')  # Use date_stop as the reporting date
+                        if spend == 0:
+                            continue
+                        result.append({
+                            'account_id': account['account_id'],
+                            'account_name': account['account_name'],
+                            'campaign': campaign[Campaign.Field.name],
+                            'campaign_id': campaign[Campaign.Field.id],
+                            'country': country_code, 
+                            'date': date,
+                            'spend': spend
+                        })
+        except Exception as e:
+            print(f"❌ Error fetching data for account {account['account_id']}: {e}")
+            continue
+    return result
+
 async def save_data_to_sqlite(data: list):
     print('saving data to sqlite')
     print("Current time (UTC-3):", datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=-3))))
@@ -196,6 +269,7 @@ async def save_data_to_sqlite(data: list):
         date = item.get('date')
         campaign_id = item.get('campaign_id')
         country = item.get('country')
+        country = country_name_to_code(country)
         spend = float(item.get('spend', 0))
         
         c.execute('''SELECT spend FROM facebook WHERE account_id=? AND campaign_id=? AND country=? AND date=?''',
@@ -244,14 +318,30 @@ async def load_data_from_db() -> list:
 
     result = []
     for row in sum_spend_per_country:
-        country = row[0]
+        # country = row[0]
+        # spend = row[1]
+        # country_code = country_name_to_code(country)
+        # result.append({'country': country, 'spend': spend, 'country_code': country_code})
+        
+        country_code = row[0]
         spend = row[1]
-        country_code = country_name_to_code(country)
-        result.append({'country': country, 'spend': spend, 'country_code': country_code})
+        country = pycountry.countries.get(alpha_2=country_code)
+        country_name = country.name if country else "Unknown country code"
+        if country_name == "Unknown country code":
+            print(f"Warning: Could not find country name for code '{country_code}'")
+            if country_code == "BL":
+                country_name = "St. Barths"
+            elif country_code == "WF":
+                country_name = "Wallis and Futuna Islands"  
+            elif country_code == "XK":
+                country_name = "Kosovo"
+
+        result.append({'country': country_name, 'spend': spend, 'country_code': country_code})
     return result
   
 async def fb_optimize() -> list:
-    fb_data = await get_facebook_ads_direct()
+    # fb_data = await get_facebook_ads_direct_windsor()
+    fb_data = await get_facebook_ads_data_from_graph_api()
     await save_data_to_sqlite(fb_data)
     fb_data_optimize = await load_data_from_db()
     
@@ -281,7 +371,7 @@ async def remove_country_from_account_id(countries_info: list)-> None:
         print('===============account_id================')
         print(account_id, account_name)
 
-        if account_id == "3634337080196089": # account_name is acc 28
+        if account_id == "1099441028945876": # BLACK STAR [ACC 34] [T.D]
             print(f"⛔ Skipping account_id {account_id} as per exclusion rule.")
             continue
         

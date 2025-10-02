@@ -97,7 +97,7 @@ def get_added_removed_countries(remove_country: dict):
     added_countries_names = remove_country_set - old_country_set
     added_countries = [row for row in remove_country if row['COUNTRY'] in added_countries_names]
     if added_countries:
-        message.append("Added to the Remove List\n")
+        message.append("❌ REMOVED FROM CAMPAIGN\n")
         print('Added countries (full items):', added_countries)
         for country in added_countries:
             message.append(f"🏴 Country: {country['COUNTRY']}\n")
@@ -114,7 +114,7 @@ def get_added_removed_countries(remove_country: dict):
     removed_countries_names = old_country_set - remove_country_set
     removed_countries = [row for row in old_country if row['COUNTRY'] in removed_countries_names]
     if removed_countries:
-        message.append("Removed from the Remove List\n")
+        message.append("✅ ADDED TO CAMPAIGN\n")
         print('Removed countries (full items):', removed_countries)
         for country in removed_countries:
             message.append(f"🏴 Country: {country['COUNTRY']}\n")
@@ -193,10 +193,11 @@ async def scheduler():
         # Get Brazilia time (UTC-3)
         now = datetime.now(timezone(timedelta(hours=-3)))
         if now.hour == 22 and now.minute == 1:  # Brazil time 10:00 PM
-            await main()
+            await main(isStarted=True)
             # Sleep for 60 seconds to avoid running multiple times within the same minute
             await asyncio.sleep(60)
         if now.minute == 00:
+            await facebook.fb_optimize()
             alert.send_country_message()
             await asyncio.sleep(60)
         else:
